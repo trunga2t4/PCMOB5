@@ -1,5 +1,5 @@
-import { TouchableOpacity, TextInput } from "react-native";
 import React, { useState, useEffect } from "react";
+import { TouchableOpacity, TextInput } from "react-native";
 import { StyleSheet, Text, View, ActivityIndicator } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
@@ -9,20 +9,19 @@ const API_ADD_POST = "/create";
 const API_WHOAMI = "/whoami";
 
 export default function CreateScreen({ navigation }) {
-  const [username, setUsername] = useState("");
+  const [pageTitle, setPageTitle] = useState("");
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
 
-  async function getUsername() {
+  async function getPageTitle() {
     const token = await AsyncStorage.getItem("token");
-    console.log(`Token is ${token}`);
+    console.log(`Token: ${token}`);
     try {
       const response1 = await axios.get(API + API_WHOAMI, {
         headers: { Authorization: `JWT ${token}` },
       });
-      console.log("Got user name!");
-      console.log(response1);
-      setUsername(response1.data.username);
+      console.log(`Username: ${response1.data.username}`);
+      setPageTitle(`${response1.data.username}'s New Post`);
     } catch (error) {
       console.log("Error getting user name and posts data");
       if (error.response1) {
@@ -38,21 +37,17 @@ export default function CreateScreen({ navigation }) {
     // Check for when we come back to this screen
     const removeListener = navigation.addListener("focus", () => {
       console.log("Running nav listener");
-      setUsername(<ActivityIndicator />);
-      getUsername();
+      setPageTitle(<ActivityIndicator />);
+      getPageTitle();
     });
-    getUsername();
+    getPageTitle();
 
     return removeListener;
   }, []);
 
-  function signOut() {
-    AsyncStorage.removeItem("token");
-  }
-
   async function createPost(title, content) {
     const token = await AsyncStorage.getItem("token");
-    console.log(`Token is ${token}`);
+    console.log(`Token: ${token}`);
     try {
       const response = await axios.post(
         API + API_ADD_POST,
@@ -63,8 +58,7 @@ export default function CreateScreen({ navigation }) {
       );
       console.log("New post created!");
       console.log(response.data);
-
-      navigation.navigate("Account");
+      navigation.navigate("Content");
     } catch (error) {
       console.log("Error posting data");
       if (error.response) {
@@ -77,7 +71,7 @@ export default function CreateScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>{username}'s New Post</Text>
+      <Text style={styles.title}>{pageTitle}</Text>
       <Text style={styles.title2}>Post Title</Text>
       <TextInput
         style={styles.textInput}

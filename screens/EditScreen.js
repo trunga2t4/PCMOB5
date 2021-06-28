@@ -1,5 +1,5 @@
-import { TouchableOpacity, TextInput } from "react-native";
 import React, { useState, useEffect } from "react";
+import { TouchableOpacity, TextInput } from "react-native";
 import { StyleSheet, Text, View, ActivityIndicator } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
@@ -8,24 +8,22 @@ const API = "https://trunga2t4.pythonanywhere.com";
 const API_WHOAMI = "/whoami";
 const API_POSTS = "/posts";
 
-export default function EditScreen({ navigation }) {
-  const [username, setUsername] = useState("");
+export default function EditScreen({ route, navigation }) {
+  const { editId } = route.params;
   const [title, setTitle] = useState("");
+  const [pageTitle, setPageTitle] = useState("");
   const [content, setContent] = useState("");
 
-  async function getUsername() {
-    console.log("---- Getting user name ----");
-    const id = await AsyncStorage.getItem("editId");
+  async function getPageTitle() {
     const token = await AsyncStorage.getItem("token");
-    console.log(`Token is ${token}`);
+    console.log(`Token: ${token}`);
     try {
       const response1 = await axios.get(API + API_WHOAMI, {
         headers: { Authorization: `JWT ${token}` },
       });
-      console.log("Got user name!");
-      console.log(response1);
-      setUsername(response1.data.username);
-      const response = await axios.get(API + API_POSTS + `/${id}`, {
+      console.log(`Username: ${response1.data.username}`);
+      setPageTitle(`${response1.data.username}'s Edit Page`);
+      const response = await axios.get(API + API_POSTS + `/${editId}`, {
         headers: { Authorization: `JWT ${token}` },
       });
       console.log("Got post data!");
@@ -47,25 +45,20 @@ export default function EditScreen({ navigation }) {
     // Check for when we come back to this screen
     const removeListener = navigation.addListener("focus", () => {
       console.log("Running nav listener");
-      setUsername(<ActivityIndicator />);
-      getUsername();
+      setPageTitle(<ActivityIndicator />);
+      getPageTitle();
     });
-    getUsername();
+    getPageTitle();
 
     return removeListener;
   }, []);
 
-  function signOut() {
-    AsyncStorage.removeItem("token");
-  }
-
   async function editPost(title, content) {
-    const id = await AsyncStorage.getItem("editId");
     const token = await AsyncStorage.getItem("token");
     console.log(`Token is ${token}`);
     try {
       const response = await axios.put(
-        API + API_POSTS + `/${id}`,
+        API + API_POSTS + `/${editId}`,
         { title, content },
         {
           headers: { Authorization: `JWT ${token}` },
@@ -74,7 +67,7 @@ export default function EditScreen({ navigation }) {
       console.log("New post created!");
       console.log(response.data);
       AsyncStorage.removeItem("editId");
-      navigation.navigate("Account");
+      navigation.navigate("Content");
     } catch (error) {
       console.log("Error posting data");
       if (error.response) {
@@ -87,7 +80,7 @@ export default function EditScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>{username}'s Edit Page</Text>
+      <Text style={styles.title}>{pageTitle}</Text>
       <Text style={styles.title2}>Post Title</Text>
       <TextInput
         style={styles.textInput}

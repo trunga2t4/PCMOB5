@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { Button, StyleSheet, Text, FlatList, View } from "react-native";
-import { ActivityIndicator, ScrollView, TouchableOpacity } from "react-native";
+import { StyleSheet, Text, FlatList, View } from "react-native";
+import { ActivityIndicator, TouchableOpacity } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Ionicons, AntDesign } from "@expo/vector-icons";
 import axios from "axios";
@@ -9,26 +9,27 @@ const API = "https://trunga2t4.pythonanywhere.com";
 const API_WHOAMI = "/whoami";
 const API_POSTS = "/posts";
 
-export default function AccountScreen({ navigation }) {
-  const [username, setUsername] = useState("");
+export default function IndexScreen({ navigation }) {
+  const [pageTitle, setPageTitle] = useState("");
   const [posts, setPosts] = useState([]);
+  const [username, setUsername] = useState("");
 
-  async function getUsername() {
+  async function getPageTitle() {
     console.log("---- Getting user name ----");
     const token = await AsyncStorage.getItem("token");
-    console.log(`Token is ${token}`);
+    console.log(`Token: ${token}`);
     try {
       const response1 = await axios.get(API + API_WHOAMI, {
         headers: { Authorization: `JWT ${token}` },
       });
-      console.log("Got user name!");
-      console.log(response1);
+      console.log(`Username: ${response1.data.username}`);
       setUsername(response1.data.username);
+      setPageTitle(`${response1.data.username}'s Home Page`);
       const response = await axios.get(API + API_POSTS, {
         headers: { Authorization: `JWT ${token}` },
       });
       console.log("Got posts data!");
-      console.log(response.data);
+      //console.log(response.data);
       setPosts(response.data);
     } catch (error) {
       console.log("Error getting user name and posts data");
@@ -45,26 +46,16 @@ export default function AccountScreen({ navigation }) {
     // Check for when we come back to this screen
     const removeListener = navigation.addListener("focus", () => {
       console.log("Running nav listener");
-      setUsername(<ActivityIndicator />);
-      getUsername();
+      setPageTitle(<ActivityIndicator />);
+      getPageTitle();
     });
-    getUsername();
-    AsyncStorage.removeItem("editId");
+    getPageTitle();
     return removeListener;
   }, []);
 
-  function signOut() {
-    AsyncStorage.removeItem("token");
-    navigation.navigate("SignIn");
-  }
-
-  function createPost() {
-    navigation.navigate("Create");
-  }
-
   async function deletePost(id) {
     const token = await AsyncStorage.getItem("token");
-    console.log(`Token is ${token}`);
+    console.log(`Token: ${token}`);
     try {
       const response = await axios.delete(API + API_POSTS + `/${id}`, {
         headers: { Authorization: `JWT ${token}` },
@@ -88,13 +79,13 @@ export default function AccountScreen({ navigation }) {
   }
 
   async function editPost(id) {
-    AsyncStorage.setItem("editId", id);
-    navigation.navigate("Edit");
+    console.log(id);
+    navigation.navigate("Edit", { editId: String(id) });
   }
 
   async function showPost(id) {
-    AsyncStorage.setItem("editId", id);
-    navigation.navigate("Show");
+    console.log(id);
+    navigation.navigate("Show", { editId: String(id) });
   }
 
   function renderItem({ item }) {
@@ -162,15 +153,16 @@ export default function AccountScreen({ navigation }) {
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>{username}'s Homepage</Text>
+    <View contentContainerStyle={styles.container}>
+      <Text style={styles.title}>{pageTitle}</Text>
       <FlatList
+        inverted
         data={posts}
         renderItem={renderItem}
         style={{ width: "100%" }}
         keyExtractor={(item) => item.id.toString()}
       />
-    </ScrollView>
+    </View>
   );
 }
 
@@ -186,6 +178,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: "700",
+    margin: 24,
   },
   content: {
     fontSize: 16,

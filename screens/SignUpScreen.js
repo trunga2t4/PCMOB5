@@ -33,7 +33,7 @@ export default function SignUpScreen({ navigation }) {
       console.log(response);
       AsyncStorage.setItem("token", response.data.access_token);
       setLoading(false);
-      navigation.navigate("Account");
+      navigation.navigate("Content");
     } catch (error) {
       setLoading(false);
       console.log("Error signing up!");
@@ -43,7 +43,7 @@ export default function SignUpScreen({ navigation }) {
   }
 
   function toLogin() {
-    navigation.navigate("Content");
+    navigation.navigate("SignIn");
   }
 
   return (

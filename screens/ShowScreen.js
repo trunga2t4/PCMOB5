@@ -1,6 +1,6 @@
-import { TouchableOpacity } from "react-native";
 import React, { useState, useEffect } from "react";
 import { StyleSheet, Text, View, ActivityIndicator } from "react-native";
+import { TouchableOpacity } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 
@@ -8,30 +8,28 @@ const API = "https://trunga2t4.pythonanywhere.com";
 const API_WHOAMI = "/whoami";
 const API_POSTS = "/posts";
 
-export default function ShowScreen({ navigation }) {
-  const [username, setUsername] = useState("");
+export default function ShowScreen({ route, navigation }) {
+  const { editId } = route.params;
+  const [pageTitle, setPageTitle] = useState("");
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
 
-  async function getUsername() {
-    const id = await AsyncStorage.getItem("editId");
+  async function getPageTitle() {
     const token = await AsyncStorage.getItem("token");
-    console.log(`Token is ${token}`);
+    console.log(`Token: ${token}`);
     try {
       const response1 = await axios.get(API + API_WHOAMI, {
         headers: { Authorization: `JWT ${token}` },
       });
-      console.log("Got user name!");
-      console.log(response1);
-      const response = await axios.get(API + API_POSTS + `/${id}`, {
+      console.log(`Username: ${response1.data.username}`);
+      const response = await axios.get(API + API_POSTS + `/${editId}`, {
         headers: { Authorization: `JWT ${token}` },
       });
       console.log("Got post data!");
       console.log(response.data);
       setTitle(response.data.title);
       setContent(response.data.content);
-      setUsername(response.data.username);
-      AsyncStorage.removeItem("editId");
+      setPageTitle(`${response.data.username}'s Post`);
     } catch (error) {
       console.log("Error getting user name and posts data");
       if (error.response) {
@@ -47,21 +45,17 @@ export default function ShowScreen({ navigation }) {
     // Check for when we come back to this screen
     const removeListener = navigation.addListener("focus", () => {
       console.log("Running nav listener");
-      setUsername(<ActivityIndicator />);
-      getUsername();
+      setPageTitle(<ActivityIndicator />);
+      getPageTitle();
     });
-    getUsername();
+    getPageTitle();
 
     return removeListener;
   }, []);
 
-  function signOut() {
-    AsyncStorage.removeItem("token");
-  }
-
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>{username}'s Post</Text>
+      <Text style={styles.title}>{pageTitle}</Text>
       <Text style={styles.title2}>{title}</Text>
       <Text style={styles.text}>{content}</Text>
       <View style={{ alignItems: "center" }}>
