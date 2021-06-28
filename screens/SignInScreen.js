@@ -1,23 +1,41 @@
-import React from "react";
-import { useState, useEffect } from "react";
-import {
-  View,
-  Text,
-  TextInput,
-  StyleSheet,
-  TouchableOpacity,
-  TouchableWithoutFeedback,
-  Keyboard,
-} from "react-native";
+import React, { useState } from "react";
+import { View, Text, TextInput, StyleSheet, Keyboard } from "react-native";
+import { TouchableOpacity, TouchableWithoutFeedback } from "react-native";
+import { ActivityIndicator } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import axios from "axios";
+
+const API = "https://trunga2t4.pythonanywhere.com";
+const API_LOGIN = "/auth";
 
 export default function SignInScreen({ navigation }) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [errorText, setErrorText] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  function login() {
+  async function login() {
     Keyboard.dismiss();
-    // do stuff here to log in
+    try {
+      setLoading(true);
+      const response = await axios.post(API + API_LOGIN, {
+        username,
+        password,
+      });
+      console.log("Success logging in!");
+      console.log(response);
+      AsyncStorage.setItem("token", response.data.access_token);
+      setLoading(false);
+      navigation.navigate("Content");
+    } catch (error) {
+      setLoading(false);
+      console.log("Error logging in!");
+      console.log(error.response);
+      setErrorText(error.response.data.description);
+    }
+  }
+  function toRegister() {
+    navigation.navigate("SignUp");
   }
 
   return (
@@ -42,10 +60,20 @@ export default function SignInScreen({ navigation }) {
           value={password}
           onChangeText={(input) => setPassword(input)}
         />
-        <TouchableOpacity onPress={login} style={styles.loginButton}>
-          <Text style={styles.buttonText}>Log in</Text>
-        </TouchableOpacity>
-        <Text style={styles.errorText}>{errorText}</Text>
+        <View style={{ alignItems: "center" }}>
+          <TouchableOpacity onPress={login} style={styles.loginButton}>
+            <Text style={styles.buttonText}>Log in</Text>
+          </TouchableOpacity>
+          {loading ? (
+            <ActivityIndicator style={{ marginLeft: 20, marginBottom: 20 }} /> // adjust
+          ) : null}
+          <TouchableOpacity onPress={toRegister}>
+            <Text style={styles.fieldTitle}>
+              Not register yet? Sign up instead
+            </Text>
+          </TouchableOpacity>
+          <Text style={styles.errorText}>{errorText}</Text>
+        </View>
       </View>
     </TouchableWithoutFeedback>
   );
@@ -61,10 +89,12 @@ const styles = StyleSheet.create({
     fontSize: 36,
     fontWeight: "bold",
     marginBottom: 24,
+    alignItems: "center",
   },
   fieldTitle: {
     fontSize: 18,
     marginBottom: 12,
+    alignItems: "center",
   },
   input: {
     borderColor: "#999",
